@@ -4,3 +4,7 @@ matplotlib
 scikit-learn
 statsmodels
 mlflow
+fastapi
+uvicorn
+pytest
+httpx
