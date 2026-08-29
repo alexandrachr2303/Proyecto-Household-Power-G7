@@ -14,6 +14,7 @@ El proyecto implementa un flujo completo de Machine Learning que incluye:
 * Registro y versionado del modelo.
 * API de inferencia con FastAPI.
 * Contenerización mediante Docker.
+* Pruebas automatizadas con pytest.
 
 ---
 
@@ -29,6 +30,7 @@ El proyecto implementa un flujo completo de Machine Learning que incluye:
 * FastAPI
 * Uvicorn
 * Docker
+* Pytest
 
 ---
 
@@ -233,6 +235,131 @@ La documentación Swagger:
 http://localhost:8000/docs
 ```
 
+## . Pruebas
+
+Se implementó una suite de pruebas automatizadas utilizando **pytest** para verificar la calidad de los datos, el funcionamiento del modelo y el comportamiento de la API de inferencia.
+
+### .1 Pruebas de datos
+
+Se realizaron pruebas para validar que los datos utilizados por el modelo cumplan con las condiciones esperadas:
+
+* **Esquema:** verifica que la estructura del conjunto de datos sea la esperada.
+* **Tipos:** verifica que las variables tengan los tipos de datos correctos.
+* **Rangos:** verifica que los valores se encuentren dentro de los rangos permitidos.
+* **Valores faltantes:** verifica que no existan valores `missing` en las variables correspondientes.
+* **Variables obligatorias:** verifica que todas las variables requeridas estén presentes.
+
+Archivo:
+
+```text
+tests/test_data.py
+```
+
+**Resultado:**
+
+```text
+5 passed
+```
+
+### N.2 Prueba del modelo
+
+Se verificó que un conjunto de datos de entrada válido pueda ser procesado correctamente por el modelo registrado en MLflow.
+
+La prueba comprueba:
+
+```text
+Input válido → Modelo → Prediction válida
+```
+
+Se valida que la predicción:
+
+* exista;
+* sea numérica;
+* sea válida para el pronóstico.
+
+Archivo:
+
+```text
+tests/test_model.py
+```
+
+**Resultado:**
+
+```text
+1 passed
+```
+
+### N.3 Pruebas de la API
+
+Se realizaron pruebas sobre el endpoint:
+
+```text
+POST /predict
+```
+
+#### Request válido
+
+Se comprueba que:
+
+```text
+Request válido → HTTP 200 → Response válida
+```
+
+Además, se verifica que la respuesta contenga los siguientes campos:
+
+```text
+forecast
+horizon
+model_name
+model_version
+```
+
+#### Request inválido
+
+Se envía un request incompleto para comprobar que la API rechace correctamente la entrada:
+
+```text
+Request inválido → HTTP 422
+```
+
+Archivo:
+
+```text
+tests/test_api.py
+```
+
+**Resultado:**
+
+```text
+3 passed
+```
+
+### N.4 Ejecución de las pruebas
+
+Para ejecutar todas las pruebas desde la raíz del proyecto:
+
+```powershell
+pytest tests/ -v
+```
+
+### N.5 Resultado final
+
+La suite completa de pruebas produjo el siguiente resultado:
+
+```text
+9 passed
+```
+
+| Área      | Pruebas | Resultado      |
+| --------- | ------: | -------------- |
+| Datos     |       5 | ✅ 5 passed     |
+| Modelo    |       1 | ✅ 1 passed     |
+| API       |       3 | ✅ 3 passed     |
+| **Total** |   **9** | **✅ 9 passed** |
+
+Con estas pruebas se verifica el cumplimiento de los requisitos de validación de datos, funcionamiento del modelo y consumo de la API de inferencia.
+
+
 ---
 
 # Ejecución del proyecto
@@ -354,6 +481,27 @@ docker run --rm grupo7-mlops python -c "import socket; print(socket.gethostbynam
 ```powershell
 docker run --rm -p 8000:8000 -e MLFLOW_TRACKING_URI=http://host.docker.internal:5000 grupo7-mlops
 ```
+### Pruebas
+
+```powershell
+cd .\Proyecto-Household-Power-G7
+```
+```Activar el entorno
+.\.venv\Scripts\Activate.ps1
+```
+```prueba de datos
+pytest tests/test_data.py -v
+```
+```prueba de modelos
+pytest tests/test_model.py -v
+```
+```pruebas de API
+pytest tests/test_api.py -v
+```
+
+```suite completa
+pytest tests/ -v
+```
 
 ---
 
@@ -375,6 +523,7 @@ docker run --rm -p 8000:8000 -e MLFLOW_TRACKING_URI=http://host.docker.internal:
 | Docker Build         | ✅      |
 | Docker Run           | ✅      |
 | Prueba de `/predict` | ✅      |
+| Pruebas automatizadas  | ✅ 9/9 |
 
 ---
 
