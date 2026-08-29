@@ -3,13 +3,16 @@ from pydantic import BaseModel
 import pandas as pd
 import mlflow
 import mlflow.sklearn
-
+import os
 
 # ==========================================
 # CONFIGURACIÓN
 # ==========================================
 
-MLFLOW_TRACKING_URI = "http://127.0.0.1:5000"
+MLFLOW_TRACKING_URI = os.getenv(
+    "MLFLOW_TRACKING_URI",
+    "http://127.0.0.1:5000"
+)
 
 MODEL_NAME = "random_forest_feature_set_b"
 MODEL_VERSION = "1"
