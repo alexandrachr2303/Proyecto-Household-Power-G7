@@ -1,13 +1,16 @@
+##### LIBRERÍAS
+
 from fastapi import FastAPI
 from pydantic import BaseModel
 import pandas as pd
 import mlflow
 import mlflow.sklearn
 import os
+import time
+from src.monitoring.system_monitor import SystemMonitor
 
-# ==========================================
-# CONFIGURACIÓN
-# ==========================================
+
+##### CONFIGURACIÓN
 
 MLFLOW_TRACKING_URI = os.getenv(
     "MLFLOW_TRACKING_URI",
@@ -16,22 +19,16 @@ MLFLOW_TRACKING_URI = os.getenv(
 
 MODEL_NAME = "random_forest_feature_set_b"
 MODEL_VERSION = "1"
-
 mlflow.set_tracking_uri(MLFLOW_TRACKING_URI)
 
 
-# ==========================================
-# CARGAR MODELO
-# ==========================================
+##### CARGA DEL MODELO
 
 model_uri = f"models:/{MODEL_NAME}/{MODEL_VERSION}"
-
 model = mlflow.sklearn.load_model(model_uri)
 
 
-# ==========================================
 # API
-# ==========================================
 
 app = FastAPI(
     title="Household Power Forecasting API",
@@ -39,13 +36,29 @@ app = FastAPI(
     version="1.0.0"
 )
 
+# Se crea un objeto que conservará las métricas mientras la API esté activa.
+system_monitor = SystemMonitor()
 
-# ==========================================
-# INPUT
-# ==========================================
+
+@app.middleware("http")
+async def collect_system_metrics(request, call_next):
+    """Mide cada request sin cambiar la respuesta de la API."""
+    # Se guarda el momento exacto en que entra la solicitud.
+    start = time.perf_counter()
+
+    status_code = 500  # Se inicia en 500 para registrar un error si la solicitud falla inesperadamente.
+    try:
+        response = await call_next(request) # call_next permite que FastAPI procese normalmente la solicitud.
+        status_code = response.status_code
+        return response
+    finally: # El bloque finally se ejecuta incluso si ocurre una excepción.
+        latency_ms = (time.perf_counter() - start) * 1000
+        system_monitor.record_request(latency_ms, status_code)  # Se envían el tiempo y el código HTTP al monitor del sistema.
+
+
+##### INPUT
 
 class PredictionInput(BaseModel):
-
     lag_1: float
     lag_168: float
     hour_sin: float
@@ -61,9 +74,7 @@ class PredictionInput(BaseModel):
     is_weekend: int
 
 
-# ==========================================
-# ENDPOINT PRINCIPAL
-# ==========================================
+##### ENDPOINT PRINCIPAL
 
 @app.post("/predict")
 def predict(data: PredictionInput):
@@ -96,9 +107,7 @@ def predict(data: PredictionInput):
     }
 
 
-# ==========================================
-# HEALTH CHECK
-# ==========================================
+##### HEALTH CHECK
 
 @app.get("/")
 def root():
@@ -109,3 +118,9 @@ def root():
         "model": MODEL_NAME,
         "model_version": MODEL_VERSION
     }
+
+@app.get("/monitoring/system")
+def monitoring_system():
+    """Expone latency, throughput, error rate y disponibilidad."""
+    # FastAPI convierte automáticamente este diccionario en una respuesta JSON.
+    return system_monitor.get_metrics()

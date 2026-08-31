@@ -1,0 +1,13 @@
+batch,actual,forecast
+reference,1.10,1.15
+reference,1.30,1.25
+reference,1.50,1.55
+reference,1.70,1.65
+batch_1,1.20,1.28
+batch_1,1.40,1.32
+batch_1,1.60,1.68
+batch_1,1.80,1.72
+batch_2,1.25,1.45
+batch_2,1.50,1.30
+batch_2,1.75,1.95
+batch_2,2.00,1.80
