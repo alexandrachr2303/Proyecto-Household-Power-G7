@@ -1,0 +1,14 @@
+{
+  "retrain": false,
+  "status": "NO_RETRAIN",
+  "reason": "No significant data drift detected",
+  "inputs": {
+    "psi": 0.05,
+    "mae_change_percent": 10.0,
+    "rmse_change_percent": 10.0
+  },
+  "thresholds": {
+    "psi": 0.25,
+    "performance_degradation_percent": 50.0
+  }
+}

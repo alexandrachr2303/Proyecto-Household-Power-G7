@@ -1,0 +1,14 @@
+{
+  "retrain": false,
+  "status": "MONITOR",
+  "reason": "Data drift detected but model performance remains acceptable",
+  "inputs": {
+    "psi": 8.2831,
+    "mae_change_percent": 20.0,
+    "rmse_change_percent": 20.0
+  },
+  "thresholds": {
+    "psi": 0.25,
+    "performance_degradation_percent": 50.0
+  }
+}
