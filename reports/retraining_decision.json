@@ -1,0 +1,14 @@
+{
+  "retrain": true,
+  "status": "RETRAIN",
+  "reason": "Data drift and model degradation detected",
+  "inputs": {
+    "psi": 8.2831,
+    "mae_change_percent": 300.0,
+    "rmse_change_percent": 300.0
+  },
+  "thresholds": {
+    "psi": 0.25,
+    "performance_degradation_percent": 50.0
+  }
+}
