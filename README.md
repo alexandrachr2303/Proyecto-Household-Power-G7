@@ -1,136 +1,305 @@
-# Proyecto Household Power G7
+# Household Power G7 — MLOps de Pronóstico de Consumo Eléctrico
 
+Proyecto académico de Machine Learning y MLOps para el pronóstico del consumo eléctrico de un hogar, desarrollado como parte del curso de Ciencia de Datos.
 
-Proyecto de Machine Learning para el pronóstico del consumo eléctrico utilizando el dataset **Household Electric Power Consumption**.
+El proyecto implementa un flujo reproducible que incluye ingestión y validación de datos, análisis exploratorio, ingeniería de características, entrenamiento y evaluación de modelos, experiment tracking con MLflow, Model Registry, API de inferencia con FastAPI, Docker y monitoreo de datos, modelo, calidad y sistema.
 
-El proyecto implementa un flujo completo de Machine Learning que incluye:
+---
 
-* Ingesta y análisis de datos.
-* Data Quality.
-* Análisis exploratorio de datos (EDA).
-* Feature Engineering para series temporales.
-* Modelado predictivo.
+# 1. Business Problem
+
+El proyecto tiene como objetivo desarrollar un modelo de Machine Learning para realizar el pronóstico del consumo eléctrico de un hogar utilizando datos históricos de consumo registrados a intervalos de un minuto.
+
+El objetivo es predecir el consumo correspondiente a la siguiente hora (**t+1**) y demostrar un flujo MLOps reproducible que incluya:
+
+* Validación de datos.
+* Análisis exploratorio.
+* Ingeniería de características.
+* Entrenamiento y evaluación del modelo.
 * Tracking de experimentos con MLflow.
 * Registro y versionado del modelo.
-* API de inferencia con FastAPI.
+* Despliegue mediante FastAPI.
 * Contenerización mediante Docker.
-* Pruebas automatizadas con pytest.
+* Monitoreo de datos, modelo y sistema.
+* Detección de Data Drift.
+* Quality Gate.
+* Estrategia de decisión para reentrenamiento.
+
+El problema se aborda como un problema de **regresión y pronóstico de series temporales**.
 
 ---
 
-## Tecnologías utilizadas
+# 2. Dataset
 
-* Python 3.13
-* Pandas
-* NumPy
-* Matplotlib
-* Scikit-learn
-* Statsmodels
-* MLflow
-* FastAPI
-* Uvicorn
-* Docker
-* Pytest
+Se utilizó el dataset **Individual Household Electric Power Consumption**, que contiene mediciones del consumo eléctrico de un hogar.
+
+Los datos originales tienen una frecuencia de aproximadamente un minuto y contienen las siguientes variables:
+
+* `Date`
+* `Time`
+* `Global_active_power`
+* `Global_reactive_power`
+* `Voltage`
+* `Global_intensity`
+* `Sub_metering_1`
+* `Sub_metering_2`
+* `Sub_metering_3`
+
+El período original de los datos utilizado en el proyecto comprende:
+
+```text
+2006-12-16 17:24:00
+        a
+2010-11-26 21:02:00
+```
+
+Para el modelado, los datos fueron agregados a una frecuencia **horaria**.
+
+Dataset final utilizado para el modelado:
+
+```text
+33,195 observaciones horarias
+```
+
+Variable objetivo:
+
+```text
+Global_active_power
+```
+
+La variable objetivo representa el consumo de potencia activa global y se utiliza para realizar el pronóstico de la siguiente hora.
+
+Los datos originales no se incluyen en el repositorio debido a su tamaño y se mantienen fuera del control de versiones.
 
 ---
 
-## Estructura del proyecto
+# 3. Architecture
+
+El proyecto sigue una arquitectura MLOps de extremo a extremo, que cubre el ciclo completo desde la ingesta y validación de los datos hasta el entrenamiento, despliegue, predicción, monitoreo y reentrenamiento del modelo.
+
+La arquitectura incluye las siguientes etapas principales:
+
+1. **Ingesta de datos:** incorporación y preparación del conjunto de datos *Household Power Consumption*.
+2. **Calidad de datos y EDA:** validación, limpieza y análisis exploratorio de los datos.
+3. **Ingeniería de características:** creación de variables temporales, rezagos (*lags*) y ventanas móviles (*rolling windows*).
+4. **Entrenamiento:** entrenamiento y evaluación de los modelos de pronóstico.
+5. **Seguimiento de experimentos con MLflow:** registro de parámetros, métricas, artefactos y experimentos.
+6. **Model Registry:** versionamiento y gestión del modelo seleccionado.
+7. **Docker:** contenedorización de la aplicación y del entorno utilizado para servir el modelo.
+8. **FastAPI:** API REST utilizada para exponer el modelo y realizar predicciones.
+9. **Monitoreo:** supervisión del *data drift*, rendimiento del modelo, calidad de los datos y métricas del sistema.
+10. **Estrategia de reentrenamiento:** proceso de decisión para determinar cuándo es necesario reentrenar el modelo.
+
+### Diagrama de Arquitectura MLOps
+
+![Arquitectura MLOps](Docs/arquitecture_mlops.png)
+
+# 4. Repository Structure
+
+La estructura principal del repositorio es:
 
 ```text
 Proyecto-Household-Power-G7/
 │
 ├── data/
+│   └── raw/
+│
+├── examples/
+│   └── monitoring/
+│       ├── predictions/
+│       ├── production/
+│       ├── reference.csv
+│       │
+│       ├── drift_simulation/
+│       │   ├── batch_1.csv
+│       │   └── batch_2.csv
+│       │
+│       └── quality_simulation/
+│           └── contaminated_batch.csv
+│
+├── reports/
+│   ├── drift_report.json
+│   ├── model_monitoring.json
+│   ├── quality_report.json
+│   └── system_monitoring.json
 │
 ├── src/
+│   ├── api/
+│   │   └── main.py
+│   │
 │   ├── ingestion/
-│   ├── tracking/
-│   └── api/
-│       └── main.py
+│   │   └── ingest.py
+│   │
+│   ├── monitoring/
+│   │   ├── data_monitor.py
+│   │   ├── model_monitor.py
+│   │   ├── quality_monitor.py
+│   │   ├── retraining_strategy.py
+│   │   └── system_monitor.py
+│   │
+│   └── tracking/
+│       ├── mlflow_config.py
+│       └── test_mlflow.py
+│
+├── tests/
+│   ├── test_api.py
+│   ├── test_data.py
+│   ├── test_model.py
+│   └── test_monitoring.py
 │
 ├── 01_ingestion_data_quality_eda.ipynb
 ├── 02_timeseries_feature_engineering_modeling.ipynb
 │
 ├── Dockerfile
 ├── .dockerignore
+├── .gitignore
+├── .python-version
 ├── requirements.txt
-├── README.md
-└── .gitignore
+└── README.md
 ```
+
+Descripción de los componentes principales:
+
+* `data/`: contiene los datos utilizados por el proyecto.
+* `examples/monitoring/`: contiene datasets pequeños utilizados para demostrar las funcionalidades de monitoreo.
+* `reports/`: contiene los resultados generados por los módulos de monitoreo.
+* `src/ingestion/`: contiene el proceso reproducible de ingestión.
+* `src/monitoring/`: contiene los componentes de monitoreo.
+* `src/api/`: contiene la API desarrollada con FastAPI.
+* `src/tracking/`: contiene la configuración relacionada con MLflow.
+* `tests/`: contiene las pruebas automatizadas.
+* `01_ingestion_data_quality_eda.ipynb`: notebook de ingestión, calidad de datos y EDA.
+* `02_timeseries_feature_engineering_modeling.ipynb`: notebook de series temporales, ingeniería de características, entrenamiento y evaluación.
+* `Dockerfile`: define la imagen Docker.
+* `requirements.txt`: contiene las dependencias Python.
+* `.gitignore`: excluye datos, entornos virtuales y artefactos locales.
 
 ---
 
-# MLflow
+# 5. Installation
 
-MLflow se utiliza para registrar los experimentos, métricas, artefactos y versiones del modelo.
-
-El modelo registrado utilizado por la API es:
-
-```text
-random_forest_feature_set_b
-```
-
-Versión:
-
-```text
-1
-```
-
-Para levantar el servidor MLflow:
+## Clonar el repositorio
 
 ```powershell
-Entrar al proyecto 
-cd .\Proyecto-Household-Power-G7
+git clone <URL_DEL_REPOSITORIO>
+```
 
-Activar el entorno virtual 
+Entrar al proyecto:
+
+```powershell
+cd Proyecto-Household-Power-G7
+```
+
+## Crear entorno virtual
+
+```powershell
+python -m venv .venv
+```
+
+## Activar entorno virtual
+
+```powershell
 .\.venv\Scripts\Activate.ps1
-
-Levantar el servidor
-mlflow server --host 127.0.0.1 --port 5000
 ```
 
-MLflow queda disponible en:
-
-```text
-http://127.0.0.1:5000
-```
-
----
-
-# API de inferencia
-
-La API fue implementada utilizando **FastAPI**.
-
-El archivo principal se encuentra en:
-
-```text
-src/api/main.py
-```
-
-Para ejecutar la API directamente:
+Si PowerShell bloquea la ejecución:
 
 ```powershell
-uvicorn src.api.main:app --reload --port 8000
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 ```
 
-La documentación interactiva de FastAPI está disponible en:
+Luego:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+## Instalar dependencias
+
+```powershell
+python -m pip install --upgrade pip
+```
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+Las dependencias necesarias para reproducir el proyecto se encuentran en:
 
 ```text
-http://localhost:8000/docs
+requirements.txt
 ```
 
 ---
 
-## Endpoint `/predict`
+# 6. Data Ingestion
 
-La API dispone del siguiente endpoint:
+El proceso reproducible de ingestión se encuentra en:
 
 ```text
-POST /predict
+src/ingestion/ingest.py
 ```
 
-El modelo realiza un pronóstico del consumo eléctrico para una hora futura.
+Para ejecutarlo:
 
-Las variables utilizadas son:
+```powershell
+python src/ingestion/ingest.py
+```
+
+El primer notebook contiene el proceso complementario de ingestión, calidad y EDA:
+
+```text
+01_ingestion_data_quality_eda.ipynb
+```
+
+Los datos originales se mantienen fuera del control de versiones debido a su tamaño.
+
+---
+
+# 7. Training
+
+El proceso de preparación de la serie temporal, ingeniería de características, entrenamiento y evaluación se encuentra en:
+
+```text
+02_timeseries_feature_engineering_modeling.ipynb
+```
+
+El notebook debe ejecutarse en orden para reproducir el proceso de modelado.
+
+## Forecasting
+
+Se implementó un pronóstico **one-step ahead**, donde se predice el consumo correspondiente a la siguiente hora:
+
+```text
+t + 1 hora
+```
+
+La división de los datos se realizó cronológicamente para evitar utilizar información futura durante el entrenamiento.
+
+```text
+Train       70% → 23,236 observaciones
+Validation  15% → 4,979 observaciones
+Test        15% → 4,980 observaciones
+```
+
+## Baseline
+
+Se utilizó **Naive Persistence** como modelo baseline:
+
+```text
+ŷ_t = y_(t-1)
+```
+
+Resultados del baseline en validación:
+
+```text
+MAE  = 0.4669
+RMSE = 0.6947
+```
+
+## Feature Set B
+
+El conjunto de características utilizado por el modelo final contiene:
 
 ```text
 hour_sin
@@ -148,79 +317,134 @@ rolling_mean_24
 rolling_std_24
 ```
 
-### Ejemplo de entrada
+## Modelo final
 
-```json
-{
-  "lag_1": 0,
-  "lag_168": 0,
-  "hour_sin": 0,
-  "hour_cos": 0,
-  "lag_24": 0,
-  "rolling_mean_3": 0,
-  "rolling_mean_24": 0,
-  "rolling_std_24": 0,
-  "month_cos": 0,
-  "day_of_week_sin": 0,
-  "month_sin": 0,
-  "day_of_week_cos": 0,
-  "is_weekend": 0
-}
-```
-
-### Respuesta
-
-```json
-{
-  "forecast": 0.2980160461835182,
-  "horizon": "t+1_hour",
-  "model_name": "random_forest_feature_set_b",
-  "model_version": "1"
-}
-```
-
-La prueba realizada obtuvo:
+El modelo seleccionado fue:
 
 ```text
-HTTP 200 OK
+RandomForestRegressor
 ```
+
+Configuración:
+
+```text
+n_estimators = 200
+max_depth = 10
+min_samples_leaf = 2
+random_state = 42
+```
+
+El criterio principal utilizado para seleccionar el modelo fue **RMSE**, utilizando **MAE** como métrica complementaria.
 
 ---
 
-# Docker
+# 8. MLflow
 
-El modelo y la API pueden ejecutarse dentro de un contenedor Docker para garantizar la reproducibilidad del servicio.
+MLflow se utiliza para realizar el tracking de experimentos y el registro de modelos.
 
-## Comprobar Docker
+## Levantar servidor MLflow
+
+```powershell
+mlflow server --host 127.0.0.1 --port 5000
+```
+
+Tracking URI:
+
+```text
+http://127.0.0.1:5000
+```
+
+## Experimento
+
+El experimento principal es:
+
+```text
+household-power-forecasting
+```
+
+El proyecto registra información relacionada con:
+
+### Parameters
+
+* Algoritmo.
+* Hiperparámetros.
+* Feature Set.
+* Random seed.
+* Data version.
+
+### Metrics
+
+* MAE.
+* RMSE.
+
+### Artifacts
+
+* Modelo entrenado.
+* Gráficos relevantes.
+* Resultados de evaluación.
+
+## Model Registry
+
+El modelo final registrado es:
+
+```text
+random_forest_feature_set_b
+```
+
+Versión:
+
+```text
+Version 1
+```
+
+Aliases utilizados:
+
+```text
+candidate
+validation
+production
+```
+
+Estos aliases representan los estados/roles utilizados durante el flujo de gestión del modelo.
+
+---
+
+# 9. Docker
+
+El proyecto incluye un `Dockerfile` para ejecutar la API dentro de un contenedor.
+
+## Verificar Docker
 
 ```powershell
 docker version
 ```
 
-Docker Desktop debe estar ejecutándose.
+Durante el desarrollo se utilizó Docker Desktop.
 
-## Construir la imagen
-
-Desde la carpeta raíz del proyecto:
+## Construir imagen
 
 ```powershell
-docker build -t grupo7-mlops .
+docker build -t household-power-g7 .
 ```
 
-## Comprobar comunicación con el equipo anfitrión
+## Verificar comunicación con el host
 
 ```powershell
-docker run --rm grupo7-mlops python -c "import socket; print(socket.gethostbyname('host.docker.internal'))"
+docker run --rm household-power-g7 python -c "import socket; print(socket.gethostbyname('host.docker.internal'))"
 ```
 
-## Ejecutar el servicio
+## Ejecutar API mediante Docker
+
+Primero debe estar ejecutándose MLflow en el equipo anfitrión:
 
 ```powershell
-cd C:\Git\Household-power-g7\Proyecto-Household-Power-G7
+mlflow server --host 127.0.0.1 --port 5000
 ```
 
+Luego ejecutar el contenedor:
+
 ```powershell
-docker run --rm -p 8000:8000 -e MLFLOW_TRACKING_URI=http://host.docker.internal:5000 grupo7-mlops
+docker run --rm -p 8000:8000 -e MLFLOW_TRACKING_URI=http://host.docker.internal:5000 household-power-g7
 ```
 
 La API queda disponible en:
@@ -229,185 +453,723 @@ La API queda disponible en:
 http://localhost:8000
 ```
 
-La documentación Swagger:
+Swagger:
 
 ```text
 http://localhost:8000/docs
 ```
 
-## . Pruebas
+---
 
-Se implementó una suite de pruebas automatizadas utilizando **pytest** para verificar la calidad de los datos, el funcionamiento del modelo y el comportamiento de la API de inferencia.
+# 10. API
 
-### .1 Pruebas de datos
+La API fue desarrollada utilizando **FastAPI**.
 
-Se realizaron pruebas para validar que los datos utilizados por el modelo cumplan con las condiciones esperadas:
-
-* **Esquema:** verifica que la estructura del conjunto de datos sea la esperada.
-* **Tipos:** verifica que las variables tengan los tipos de datos correctos.
-* **Rangos:** verifica que los valores se encuentren dentro de los rangos permitidos.
-* **Valores faltantes:** verifica que no existan valores `missing` en las variables correspondientes.
-* **Variables obligatorias:** verifica que todas las variables requeridas estén presentes.
-
-Archivo:
+Archivo principal:
 
 ```text
-tests/test_data.py
+src/api/main.py
 ```
 
-**Resultado:**
+## Ejecutar API localmente
+
+```powershell
+uvicorn src.api.main:app --reload --port 8000
+```
+
+Swagger UI:
 
 ```text
-5 passed
+http://localhost:8000/docs
 ```
 
-### N.2 Prueba del modelo
-
-Se verificó que un conjunto de datos de entrada válido pueda ser procesado correctamente por el modelo registrado en MLflow.
-
-La prueba comprueba:
-
-```text
-Input válido → Modelo → Prediction válida
-```
-
-Se valida que la predicción:
-
-* exista;
-* sea numérica;
-* sea válida para el pronóstico.
-
-Archivo:
-
-```text
-tests/test_model.py
-```
-
-**Resultado:**
-
-```text
-1 passed
-```
-
-### N.3 Pruebas de la API
-
-Se realizaron pruebas sobre el endpoint:
+## Endpoint de predicción
 
 ```text
 POST /predict
 ```
 
-#### Request válido
+El endpoint recibe las características requeridas por el modelo y devuelve el pronóstico correspondiente a la siguiente hora.
 
-Se comprueba que:
+Ejemplo de respuesta:
 
-```text
-Request válido → HTTP 200 → Response válida
+```json
+{
+  "forecast": 0.523,
+  "horizon": "t+1_hour",
+  "model_name": "random_forest_feature_set_b",
+  "model_version": "1"
+}
 ```
 
-Además, se verifica que la respuesta contenga los siguientes campos:
+La API permite demostrar la inferencia del modelo registrado.
+
+---
+
+# 11. Monitoring
+
+El proyecto implementa diferentes mecanismos de monitoreo.
+
+## 11.1 System Monitoring
+
+La API mide automáticamente métricas relacionadas con las solicitudes.
+
+Endpoint:
 
 ```text
-forecast
-horizon
-model_name
-model_version
+GET /monitoring/system
 ```
 
-#### Request inválido
+Se puede consultar mediante:
 
-Se envía un request incompleto para comprobar que la API rechace correctamente la entrada:
+```powershell
+Invoke-RestMethod -Method Get -Uri http://localhost:8000/monitoring/system
+```
+
+Las métricas incluyen:
+
+* Latency.
+* Throughput.
+* Error rate.
+* Availability.
+* Total requests.
+* Uptime.
+
+Las métricas se mantienen en memoria y se reinician al reiniciar el servicio.
+
+---
+
+## 11.2 Data Quality Gate
+
+El Quality Gate se encuentra en:
 
 ```text
-Request inválido → HTTP 422
+src/monitoring/quality_monitor.py
 ```
+
+Antes del entrenamiento se validan condiciones como:
+
+1. Dataset no vacío.
+2. Presencia de variables requeridas.
+3. Ausencia de valores faltantes.
+4. Tipos de datos correctos.
+5. Ausencia de duplicados.
+6. Ausencia de valores infinitos.
+
+Si los datos no cumplen las condiciones requeridas, el proceso se bloquea.
+
+Resultado de la validación utilizada:
+
+```text
+Training Data Quality Gate: OK
+```
+
+---
+
+## 11.3 Data Drift Monitoring
+
+El monitoreo de Data Drift se encuentra en:
+
+```text
+src/monitoring/data_monitor.py
+```
+
+Se utiliza **Population Stability Index (PSI)**.
+
+Archivos de referencia:
+
+```text
+examples/monitoring/reference.csv
+examples/monitoring/drift_simulation/batch_1.csv
+examples/monitoring/drift_simulation/batch_2.csv
+```
+
+Para un batch estable:
+
+```powershell
+python -m src.monitoring.data_monitor `
+  --reference examples/monitoring/reference.csv `
+  --production examples/monitoring/drift_simulation/batch_1.csv `
+  --columns Global_active_power `
+  --output reports/data_monitoring.json
+```
+
+Resultado esperado:
+
+```text
+PSI = 0.0000
+STATUS = OK
+```
+
+Para simular Data Drift:
+
+```powershell
+python -m src.monitoring.data_monitor `
+  --reference examples/monitoring/reference.csv `
+  --production examples/monitoring/drift_simulation/batch_2.csv `
+  --columns Global_active_power `
+  --output reports/drift_batch_2.json
+```
+
+Resultado esperado:
+
+```text
+PSI = 8.2831
+STATUS = ALERT
+```
+
+Umbrales utilizados:
+
+```text
+PSI < 0.10          → OK
+0.10 ≤ PSI < 0.25  → WARNING
+PSI ≥ 0.25          → ALERT
+```
+
+Estos valores se utilizan como criterios prácticos para la simulación académica.
+
+---
+
+## 11.4 Model Monitoring
+
+El monitoreo del modelo se encuentra en:
+
+```text
+src/monitoring/model_monitor.py
+```
+
+Se monitorean:
+
+* MAE.
+* RMSE.
+* Cambio porcentual respecto al desempeño de referencia.
+
+Ejecutar:
+
+```powershell
+python -m src.monitoring.model_monitor `
+  --input examples/monitoring/predictions_by_batch.csv `
+  --output reports/model_monitoring.json
+```
+
+Resultados de la simulación:
+
+```text
+Reference → REFERENCE
+Batch 1   → ALERT
+Batch 2   → ALERT
+```
+
+La lógica considera una degradación significativa cuando MAE o RMSE aumenta en un 50% o más respecto al valor de referencia.
+
+---
+
+## 11.5 Quality Monitoring
+
+El monitoreo de calidad se encuentra en:
+
+```text
+src/monitoring/quality_monitor.py
+```
+
+Se utiliza un batch contaminado para simular diferentes problemas de calidad.
 
 Archivo:
 
 ```text
-tests/test_api.py
+examples/monitoring/quality_simulation/contaminated_batch.csv
 ```
 
-**Resultado:**
-
-```text
-3 passed
-```
-
-### N.4 Ejecución de las pruebas
-
-Para ejecutar todas las pruebas desde la raíz del proyecto:
+Ejecutar:
 
 ```powershell
-pytest tests/ -v
+python -m src.monitoring.quality_monitor `
+  --input examples/monitoring/quality_simulation/contaminated_batch.csv `
+  --output reports/quality_contamination.json
 ```
 
-### N.5 Resultado final
+Se simulan seis incidentes:
 
-La suite completa de pruebas produjo el siguiente resultado:
+1. Missing value.
+2. Duplicate.
+3. Extreme outlier.
+4. Incorrect datatype.
+5. Unknown category.
+6. Schema modification.
+
+Resultado esperado:
 
 ```text
-14 passed
+STATUS = BLOCKED
+INCIDENTS = 6
 ```
 
-| Área      | Pruebas | Resultado      |
-| --------- | ------: | -------------- |
-| Datos     |       5 | ✅ 5 passed     |
-| Modelo    |       1 | ✅ 1 passed     |
-| API       |       3 | ✅ 3 passed     |
-| Monitoreo |       5 | ✅ 5 passed     |
-| **Total** |  **14** | **✅ 14 passed** |
-
-Con estas pruebas se verifica el cumplimiento de los requisitos de validación de datos, funcionamiento del modelo y consumo de la API de inferencia.
-
+Esto demuestra que un batch inválido puede ser detectado y bloqueado antes de continuar con el flujo.
 
 ---
 
-# Ejecución del proyecto
+## 11.6 Retraining Strategy
 
-## Paso 1 — Entrar al proyecto
+La estrategia de reentrenamiento se encuentra en:
 
-```powershell
-cd .\Proyecto-Household-Power-G7
+```text
+src/monitoring/retraining_strategy.py
 ```
 
-## Paso 2 — Activar el entorno virtual
+La decisión considera conjuntamente:
+
+```text
+PSI
+MAE change %
+RMSE change %
+```
+
+Reglas principales:
+
+```text
+PSI ≥ 0.25
+        ↓
+Data Drift significativo
+```
+
+y:
+
+```text
+MAE o RMSE ≥ 50% de aumento
+        ↓
+Model Degradation significativa
+```
+
+La decisión es:
+
+| Drift | Degradación | Decisión     |
+| ----- | ----------- | ------------ |
+| No    | No          | `NO_RETRAIN` |
+| No    | Sí          | `NO_RETRAIN` |
+| Sí    | No          | `MONITOR`    |
+| Sí    | Sí          | `RETRAIN`    |
+
+### Ejemplo: Drift + degradación
+
+```powershell
+python -m src.monitoring.retraining_strategy `
+  --psi 0.30 `
+  --mae-change 60 `
+  --rmse-change 60
+```
+
+Resultado:
+
+```text
+RETRAIN
+```
+
+### Ejemplo: Drift sin degradación
+
+```powershell
+python -m src.monitoring.retraining_strategy `
+  --psi 0.30 `
+  --mae-change 10 `
+  --rmse-change 10
+```
+
+Resultado:
+
+```text
+MONITOR
+```
+
+### Ejemplo: Degradación sin Drift
+
+```powershell
+python -m src.monitoring.retraining_strategy `
+  --psi 0.05 `
+  --mae-change 60 `
+  --rmse-change 60
+```
+
+Resultado:
+
+```text
+NO_RETRAIN
+```
+
+Los umbrales utilizados corresponden a criterios definidos para la simulación académica y podrían calibrarse posteriormente con datos históricos en un ambiente productivo.
+
+---
+
+# 12. Results
+
+## Modelo seleccionado
+
+```text
+RandomForestRegressor
+Feature Set B
+```
+
+## Configuración
+
+```text
+n_estimators = 200
+max_depth = 10
+min_samples_leaf = 2
+random_state = 42
+```
+
+## Evaluación final sobre Test
+
+```text
+MAE  = 0.3254
+RMSE = 0.4709
+```
+
+## Comparación contra el baseline
+
+| Modelo            |    MAE |   RMSE |
+| ----------------- | -----: | -----: |
+| Naive Persistence | 0.3859 | 0.5843 |
+| Random Forest     | 0.3254 | 0.4709 |
+
+## Mejora obtenida
+
+```text
+MAE improvement  = 15.67%
+RMSE improvement = 19.42%
+```
+
+El modelo final presenta una mejora respecto al baseline tanto en MAE como en RMSE.
+
+El RMSE fue utilizado como criterio principal de selección debido a que penaliza con mayor fuerza los errores grandes, mientras que MAE se utilizó como métrica complementaria.
+
+---
+
+# 13. Team
+
+El proyecto fue desarrollado por:
+
+| Integrante               | Responsabilidades                                                       |
+| ------------------------ | ----------------------------------------------------------------------- |
+| **Alexandra Chacaltana** | Modeling, MLflow Tracking, Model Registry, FastAPI, Docker y Monitoring |
+| **Alejandro Alfaro**     | Feature Engineering y Baseline Modeling . PPT                           |
+| **Evelyn Calderón**      | Data Ingestion, Data Quality y EDA, Revisión final                      |
+
+El equipo utilizó un repositorio compartido con ramas individuales y Pull Requests.
+
+Ramas principales:
+
+```text
+main
+├── alexandra
+├── alejandro
+└── eve
+```
+
+Flujo de trabajo:
+
+```text
+Rama individual
+      ↓
+Desarrollo
+      ↓
+Commit
+      ↓
+Push
+      ↓
+Pull Request
+      ↓
+Revisión / Merge
+      ↓
+main
+```
+
+---
+
+# Reproducibility
+
+Para reproducir el proyecto desde cero:
+
+## 1. Clonar repositorio
+
+```powershell
+git clone <URL_DEL_REPOSITORIO>
+cd Proyecto-Household-Power-G7
+```
+
+## 2. Crear y activar entorno
+
+```powershell
+python -m venv .venv
+```
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
 ```
 
-## Paso 3 — Levantar MLflow
+## 3. Instalar dependencias
+
+```powershell
+python -m pip install --upgrade pip
+```
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+## 4. Ejecutar ingestión
+
+```powershell
+python src/ingestion/ingest.py
+```
+
+## 5. Ejecutar notebook de análisis y modelado
+
+Abrir y ejecutar en orden:
+
+```text
+01_ingestion_data_quality_eda.ipynb
+```
+
+y posteriormente:
+
+```text
+02_timeseries_feature_engineering_modeling.ipynb
+```
+
+El segundo notebook contiene el proceso de ingeniería de características, entrenamiento y evaluación del modelo.
+
+## 6. Levantar MLflow
 
 ```powershell
 mlflow server --host 127.0.0.1 --port 5000
 ```
 
-## Paso 4 — Construir la imagen Docker
+## 7. Ejecutar API
 
 En otra terminal:
 
 ```powershell
-cd C:\Git\Household-power-g7\Proyecto-Household-Power-G7
+uvicorn src.api.main:app --reload --port 8000
 ```
 
-```powershell
-docker build -t grupo7-mlops .
-```
-
-## Paso 5 — Ejecutar la API mediante Docker
-
-```powershell
-docker run --rm -p 8000:8000 -e MLFLOW_TRACKING_URI=http://host.docker.internal:5000 grupo7-mlops
-```
-
-## Paso 6 — Abrir Swagger
-
-Ingresar en:
+## 8. Abrir Swagger
 
 ```text
 http://localhost:8000/docs
 ```
+
+## 9. Ejecutar pruebas
+
+```powershell
+python -m pytest tests\ -v
+```
+
+Resultado esperado:
+
+```text
+19 passed
+```
+
+---
+
+# Automated Tests
+
+El proyecto cuenta con 19 pruebas automatizadas distribuidas de la siguiente manera:
+
+| Archivo              | Pruebas |
+| -------------------- | ------: |
+| `test_data.py`       |       5 |
+| `test_model.py`      |       1 |
+| `test_api.py`        |       3 |
+| `test_monitoring.py` |      10 |
+| **Total**            |  **19** |
+
+Para ejecutar toda la suite:
+
+```powershell
+python -m pytest tests\ -v
+```
+
+Resultado esperado:
+
+```text
+19 passed
+```
+
+---
+
+# Complete MLOps Flow
+
+El recorrido completo utilizado para la demostración es:
+
+```text
+Raw Data
+   ↓
+Data Ingestion
+   ↓
+Data Validation / Quality Gate
+   ↓
+EDA
+   ↓
+Feature Engineering
+   ↓
+Train / Validation / Test
+   ↓
+Model Training
+   ↓
+MLflow Experiment Tracking
+   ↓
+Model Registry
+   ↓
+Docker Image
+   ↓
+FastAPI
+   ↓
+Prediction
+   ↓
+System Monitoring
+   ↓
+Data Drift Monitoring
+   ↓
+Model Monitoring
+   ↓
+Quality Monitoring
+   ↓
+Retraining Decision
+```
+
+---
+
+# Quick Commands
+
+## Proyecto
+
+```powershell
+cd .\Proyecto-Household-Power-G7
+```
+
+## Entorno virtual
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+## Dependencias
+
+```powershell
+python -m pip install -r requirements.txt
+```
+
+## Ingestión
+
+```powershell
+python src/ingestion/ingest.py
+```
+
+## MLflow
+
+```powershell
+mlflow server --host 127.0.0.1 --port 5000
+```
+
+## FastAPI
+
+```powershell
+uvicorn src.api.main:app --reload --port 8000
+```
+
+## Docker
+
+```powershell
+docker version
+```
+
+```powershell
+docker build -t household-power-g7 .
+```
+
+```powershell
+docker run --rm household-power-g7 python -c "import socket; print(socket.gethostbyname('host.docker.internal'))"
+```
+
+```powershell
+docker run --rm -p 8000:8000 -e MLFLOW_TRACKING_URI=http://host.docker.internal:5000 household-power-g7
+```
+
+## Tests
+
+```powershell
+python -m pytest tests\test_data.py -v
+```
+
+```powershell
+python -m pytest tests\test_model.py -v
+```
+
+```powershell
+python -m pytest tests\test_api.py -v
+```
+
+```powershell
+python -m pytest tests\test_monitoring.py -v
+```
+
+```powershell
+python -m pytest tests\ -v
+```
+
+## Git
+
+```powershell
+git status
+```
+
+```powershell
+git branch -a
+```
+
+```powershell
+git log --oneline --all --decorate -20
+```
+
+```powershell
+git add .
+```
+
+```powershell
+git commit -m "Descripción del cambio"
+```
+
+```powershell
+git push -u origin nombre-rama
+```
+
+---
+
+# Demo Final
+
+Para realizar una demostración rápida del proyecto:
+
+### 1. Levantar MLflow
+
+```powershell
+mlflow server --host 127.0.0.1 --port 5000
+```
+
+### 2. Ejecutar la API
+
+En otra terminal:
+
+```powershell
+uvicorn src.api.main:app --reload --port 8000
+```
+
+### 3. Abrir Swagger
+
+```text
+http://localhost:8000/docs
+```
+
+### 4. Probar `/predict`
 
 Seleccionar:
 
@@ -415,334 +1177,145 @@ Seleccionar:
 POST /predict
 ```
 
-Presionar **Try it out**, ingresar los datos y ejecutar la predicción.
-
----
-
-# Comunicación Docker - MLflow
-
-Cuando la API se ejecuta directamente en el equipo, MLflow puede utilizar:
+Presionar:
 
 ```text
-127.0.0.1:5000
+Try it out
 ```
 
-Sin embargo, dentro de Docker `127.0.0.1` representa al propio contenedor.
+Ingresar un request válido y ejecutar.
 
-Por esta razón, cuando la API se ejecuta dentro de Docker se utiliza:
+Resultado esperado:
 
 ```text
-host.docker.internal:5000
+HTTP 200
 ```
 
-Esto permite que el contenedor se comunique con el servidor MLflow ejecutándose en el equipo anfitrión.
-
----
-
-# Comandos de referencia
-
-### Entrar al proyecto
-
-```powershell
-cd .\Proyecto-Household-Power-G7
-```
-
-### Activar entorno
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-### MLflow
-
-```powershell
-mlflow server --host 127.0.0.1 --port 5000
-```
-
-### FastAPI
-
-```powershell
-uvicorn src.api.main:app --reload --port 8000
-```
-
-### Docker
-
-```powershell
-docker version
-```
-
-```powershell
-docker build -t grupo7-mlops .
-```
-
-```powershell
-docker run --rm grupo7-mlops python -c "import socket; print(socket.gethostbyname('host.docker.internal'))"
-```
-
-```powershell
-docker run --rm -p 8000:8000 -e MLFLOW_TRACKING_URI=http://host.docker.internal:5000 grupo7-mlops
-```
-### Pruebas
-
-```powershell
-cd .\Proyecto-Household-Power-G7
-```
-```Activar el entorno
-.\.venv\Scripts\Activate.ps1
-```
-```prueba de datos
-pytest tests/test_data.py -v
-```
-```prueba de modelos
-pytest tests/test_model.py -v
-```
-```pruebas de API
-pytest tests/test_api.py -v
-```
-
-```suite completa
-pytest tests/ -v
-```
-
----
-
-# O. Monitoreo
-
-El monitoreo se separó en las tres dimensiones solicitadas. Los reportes se guardan
-como JSON para que sea fácil revisarlos durante la demostración.
-
-## Preparación después de clonar el repositorio
-
-Los siguientes comandos deben ejecutarse desde PowerShell en la carpeta raíz del
-proyecto, es decir, en la misma carpeta donde se encuentra `requirements.txt`.
-
-```powershell
-git clone <URL_DEL_REPOSITORIO>
-cd Proyecto-Household-Power-G7
-```
-
-Se recomienda utilizar un entorno virtual para que las librerías del proyecto no se
-mezclen con otras instalaciones de Python:
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\Activate.ps1
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
-```
-
-Si PowerShell no permite activar el entorno virtual, se puede habilitar únicamente
-para la terminal actual y volver a intentarlo:
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-.\.venv\Scripts\Activate.ps1
-```
-
-Para comprobar que `pytest` quedó instalado:
-
-```powershell
-python -m pytest --version
-```
-
-Si aparece el mensaje `pytest no se reconoce` o `No module named pytest`, instalarlo
-con el mismo Python que ejecutará las pruebas:
-
-```powershell
-python -m pip install pytest
-```
-
-Se recomienda usar `python -m pytest` en lugar de escribir solamente `pytest`. De
-esta manera se utiliza el paquete instalado dentro del entorno virtual activo.
-
-## O1. System Monitoring
-
-La API mide automáticamente cada request mediante un middleware. Las métricas se
-consultan en:
-
-```text
-GET /monitoring/system
-```
-
-Ejemplo:
-
-```json
-{
-  "latency_avg_ms": 18.42,
-  "throughput_requests_per_second": 0.031,
-  "error_rate": 0.0,
-  "availability": 1.0,
-  "total_requests": 5,
-  "uptime_seconds": 161.2
-}
-```
-
-* **Latency:** promedio de milisegundos que tarda la API en responder.
-* **Throughput:** cantidad de requests atendidos por segundo desde que inició el servicio.
-* **Error rate:** proporción de requests que terminaron con error del servidor (HTTP 5xx).
-* **Availability:** proporción de requests sin errores 5xx (`1 - error_rate`).
-
-Estas métricas se almacenan en memoria y se reinician cuando se reinicia el
-contenedor. Es una solución suficiente para la simulación académica; en producción
-se enviarían a una herramienta persistente como Prometheus.
-
-Para probarlo, primero se debe iniciar MLflow y la API siguiendo las secciones
-anteriores del README. Con la API disponible en el puerto 8000, realizar algunas
-predicciones desde Swagger o con `POST /predict` y consultar las métricas con:
+### 5. Consultar System Monitoring
 
 ```powershell
 Invoke-RestMethod -Method Get -Uri http://localhost:8000/monitoring/system
 ```
 
-También se puede abrir directamente en el navegador:
-
-```text
-http://localhost:8000/monitoring/system
-```
-
-## O2. Data Monitoring
-
-`src/monitoring/data_monitor.py` compara una muestra de referencia contra un batch
-de producción mediante **Population Stability Index (PSI)**. Los intervalos se
-calculan solamente con referencia para evitar usar información futura.
+### 6. Probar Data Drift
 
 ```powershell
 python -m src.monitoring.data_monitor `
   --reference examples/monitoring/reference.csv `
-  --production examples/monitoring/production_batch.csv `
-  --columns Global_active_power Voltage Global_intensity
+  --production examples/monitoring/drift_simulation/batch_2.csv `
+  --columns Global_active_power `
+  --output reports/drift_batch_2.json
 ```
 
-El repositorio incluye dos archivos pequeños para que el comando pueda ejecutarse
-sin descargar nuevamente el dataset completo:
+Resultado esperado:
 
 ```text
-examples/monitoring/reference.csv
-examples/monitoring/production_batch.csv
+PSI = 8.2831
+STATUS = ALERT
 ```
 
-El segundo archivo contiene un cambio fuerte e intencional en las distribuciones,
-por lo que el resultado esperado para las tres variables es `ALERT`. Al finalizar
-se crea automáticamente:
+### 7. Probar Model Monitoring
+
+```powershell
+python -m src.monitoring.model_monitor `
+  --input examples/monitoring/predictions_by_batch.csv `
+  --output reports/model_monitoring.json
+```
+
+### 8. Probar Quality Monitoring
+
+```powershell
+python -m src.monitoring.quality_monitor `
+  --input examples/monitoring/quality_simulation/contaminated_batch.csv `
+  --output reports/quality_contamination.json
+```
+
+Resultado esperado:
 
 ```text
-reports/data_monitoring.json
+STATUS = BLOCKED
+INCIDENTS = 6
 ```
 
-El resultado queda en `reports/data_monitoring.json`. La interpretación utilizada es:
-
-| PSI | Estado | Interpretación para este proyecto |
-| ---: | --- | --- |
-| menor a 0.10 | OK | Cambio pequeño |
-| 0.10 a 0.2499 | WARNING | Revisar el batch y su calidad |
-| 0.25 o mayor | ALERT | Cambio importante en la distribución |
-
-Los límites son reglas prácticas, no leyes universales. Se eligieron porque permiten
-distinguir cambios leves, moderados y fuertes en la simulación. Antes de usarlos en
-producción deberían calibrarse con varios periodos históricos. El cálculo también
-considera cambios en la proporción de valores faltantes y reporta columnas ausentes.
-
-## O3. Model Monitoring
-
-Como el problema es forecasting, se monitorean **MAE** y **RMSE** por batch cuando
-ya se conoce el consumo real. El CSV debe tener, como mínimo, las columnas `batch`,
-`actual` y `forecast`.
+### 9. Probar Retraining Strategy
 
 ```powershell
-python -m src.monitoring.model_monitor --input examples/monitoring/predictions_by_batch.csv
+python -m src.monitoring.retraining_strategy `
+  --psi 0.30 `
+  --mae-change 60 `
+  --rmse-change 60
 ```
 
-El archivo `examples/monitoring/predictions_by_batch.csv` está incluido en el
-repositorio. Contiene las columnas:
-
-| Columna | Contenido |
-| --- | --- |
-| `batch` | Nombre del periodo de referencia o producción |
-| `actual` | Consumo real observado |
-| `forecast` | Pronóstico generado por el modelo |
-
-El ejemplo simula un aumento progresivo del error. Al finalizar se crea:
+Resultado esperado:
 
 ```text
-reports/model_monitoring.json
+RETRAIN
 ```
 
-El resultado queda en `reports/model_monitoring.json`. El primer batch funciona
-como referencia. Un aumento del MAE menor a 20% se marca `OK`, de 20% a 49.99%
-se marca `WARNING` y desde 50% se marca `ALERT`. Estos porcentajes son iniciales y
-deben ajustarse cuando exista más historial y se conozca el error aceptable para el
-negocio. Un cambio en PSI no implica necesariamente que MAE o RMSE empeoren, por
-eso datos y modelo se observan por separado.
-
-## Pruebas de monitoreo
-
-Después de instalar las dependencias, ejecutar únicamente las pruebas de monitoreo:
+### 10. Ejecutar pruebas finales
 
 ```powershell
-python -m pytest tests/test_monitoring.py -v
+python -m pytest tests\ -v
 ```
 
-El resultado esperado es:
+Resultado esperado:
 
 ```text
-5 passed
+19 passed
 ```
-
-Para ejecutar todas las pruebas del proyecto:
-
-```powershell
-python -m pytest tests/ -v
-```
-
-Las pruebas verifican las cuatro métricas del sistema, un caso con y sin drift,
-una columna ausente, el cálculo de MAE/RMSE y la separación de resultados por batch.
-
-## Recorrido corto para la demostración
-
-Una vez instaladas las dependencias, el bloque de monitoreo se puede demostrar con
-estos tres pasos:
-
-```powershell
-python -m pytest tests/test_monitoring.py -v
-
-python -m src.monitoring.data_monitor `
-  --reference examples/monitoring/reference.csv `
-  --production examples/monitoring/production_batch.csv `
-  --columns Global_active_power Voltage Global_intensity
-
-python -m src.monitoring.model_monitor --input examples/monitoring/predictions_by_batch.csv
-```
-
-Los dos últimos comandos imprimen el resultado en la terminal y guardan una copia
-en `reports/`. Los ejemplos son simulaciones y no modifican el dataset original.
 
 ---
 
-# Estado del proyecto
+# Project Status
 
-| Componente           | Estado |
-| -------------------- | ------ |
-| Ingesta              | ✅      |
-| Data Quality         | ✅      |
-| EDA                  | ✅      |
-| Feature Engineering  | ✅      |
-| Modelado             | ✅      |
-| MLflow Tracking      | ✅      |
-| Model Registry       | ✅      |
-| FastAPI              | ✅      |
-| Endpoint `/predict`  | ✅      |
-| Dockerfile           | ✅      |
-| `.dockerignore`      | ✅      |
-| Docker Build         | ✅      |
-| Docker Run           | ✅      |
-| Prueba de `/predict` | ✅      |
-| Pruebas automatizadas  | ✅ 14 |
-| Monitoreo de sistema | ✅ |
-| Monitoreo de datos (PSI) | ✅ |
-| Monitoreo del modelo (MAE/RMSE) | ✅ |
+| Componente            | Estado      |
+| --------------------- | ----------- |
+| Business Problem      | ✅           |
+| Dataset               | ✅           |
+| Data Ingestion        | ✅           |
+| Data Quality          | ✅           |
+| EDA                   | ✅           |
+| Feature Engineering   | ✅           |
+| Model Training        | ✅           |
+| Model Evaluation      | ✅           |
+| MLflow Tracking       | ✅           |
+| Model Registry        | ✅           |
+| Docker                | ✅           |
+| FastAPI               | ✅           |
+| System Monitoring     | ✅           |
+| Data Drift Monitoring | ✅           |
+| Model Monitoring      | ✅           |
+| Quality Monitoring    | ✅           |
+| Retraining Strategy   | ✅           |
+| Automated Tests       | ✅ 19 passed |
+| Team                  | ✅           |
+| README                | ✅           |
 
 ---
 
+# Conclusion
 
+El proyecto implementa un flujo completo de MLOps para el pronóstico del consumo eléctrico de un hogar.
+
+El modelo final, **RandomForestRegressor con Feature Set B**, obtuvo:
+
+```text
+MAE  = 0.3254
+RMSE = 0.4709
 ```
+
+sobre el conjunto de prueba, mejorando respecto al baseline de persistencia.
+
+Además del modelado, el proyecto integra experiment tracking y Model Registry mediante MLflow, despliegue de inferencia mediante FastAPI y Docker, y mecanismos de monitoreo para sistema, datos, calidad y desempeño del modelo.
+
+La implementación también incluye una estrategia de decisión de reentrenamiento que diferencia entre Data Drift y degradación del modelo, permitiendo determinar si corresponde monitorear, no reentrenar o ejecutar un nuevo entrenamiento.
+
+La suite automatizada final cuenta con:
+
+```text
+19 pruebas
+19 passed
+```
+
+
 

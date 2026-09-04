@@ -1,0 +1,46 @@
+{
+  "status": "BLOCKED",
+  "incidents": [
+    {
+      "type": "schema_modification",
+      "status": "BLOCKED",
+      "missing_columns": [],
+      "extra_columns": [
+        "quality_category"
+      ]
+    },
+    {
+      "type": "missing_values",
+      "status": "BLOCKED",
+      "column": "Voltage",
+      "count": 1
+    },
+    {
+      "type": "incorrect_datatype",
+      "status": "BLOCKED",
+      "column": "Voltage",
+      "expected": "numeric",
+      "actual": "object"
+    },
+    {
+      "type": "duplicated_rows",
+      "status": "BLOCKED",
+      "count": 1
+    },
+    {
+      "type": "extreme_outlier",
+      "status": "BLOCKED",
+      "column": "Global_active_power",
+      "count": 1
+    },
+    {
+      "type": "unknown_category",
+      "status": "BLOCKED",
+      "column": "quality_category",
+      "unknown_categories": [
+        "UNKNOWN_NEW_CATEGORY"
+      ]
+    }
+  ],
+  "incident_count": 6
+}
